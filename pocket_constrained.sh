@@ -1,1 +1,2 @@
-boltz predict pocket_constrained.yaml --use_msa_server
+boltz predict pocket_constrained.yml --use_msa_server
+
