@@ -1,0 +1,1 @@
+boltz predict test_simple.yaml --use_msa_server

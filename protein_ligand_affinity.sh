@@ -1,0 +1,1 @@
+boltz predict protein_ligand_affinity.yaml --use_msa_server

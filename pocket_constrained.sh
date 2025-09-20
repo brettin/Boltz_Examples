@@ -1,0 +1,1 @@
+boltz predict pocket_constrained.yaml --use_msa_server
