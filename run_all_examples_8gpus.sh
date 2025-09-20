@@ -73,8 +73,10 @@ while true; do
             running=$((running + 1))
         fi
     done
+    echo "Running jobs: $running"
     
     if [ $running -eq 0 ]; then
+        echo "All jobs completed!"
         break
     fi
     
