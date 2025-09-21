@@ -14,7 +14,8 @@ conda activate boltz
 
 2. Install Boltz with CUDA support:
 ```bash
-pip install "boltz[cuda]" -U
+pip install --no-cache "boltz[cuda]" -U
+pip install --no-cache lightning[extra]
 ```
 
 For CPU-only installation:
@@ -26,6 +27,7 @@ pip install boltz -U
 
 ```bash
 boltz predict input.yaml --use_msa_server
+boltz predict --cache /homes/brettin/.boltz/
 ```
 
 ## 📁 Examples
