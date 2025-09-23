@@ -12,8 +12,11 @@
 # - Compares prediction consistency across GPUs
 # - Generates performance summary report
 #
-# Usage: ./benchmark_protein_ligand_affinity.sh [num_gpus]
-# Example: ./benchmark_protein_ligand_affinity.sh 8
+# Usage: ./benchmark_protein_ligand_affinity.sh [gpu_list]
+# Examples: 
+#   ./benchmark_protein_ligand_affinity.sh "0,1,2,3"    # Use GPUs 0,1,2,3
+#   ./benchmark_protein_ligand_affinity.sh "1,3,5,7"    # Use GPUs 1,3,5,7
+#   ./benchmark_protein_ligand_affinity.sh              # Default: use GPUs 0-7
 
 set -e
 
@@ -32,7 +35,7 @@ mkdir -p "$BENCHMARK_DIR"
 echo "=== Boltz-2 Protein-Ligand Affinity Benchmark ==="
 echo "Timestamp: $TIMESTAMP"
 echo "Target: $INPUT_CONFIG"
-echo "  GPUs to test: $NUM_GPUS"
+echo "GPUs to test: $GPU_LIST ($NUM_GPUS total)"
 echo "Results directory: $BENCHMARK_DIR"
 echo ""
 
@@ -103,10 +106,14 @@ echo "Starting parallel benchmarks on $NUM_GPUS GPUs..."
 pids=()
 start_times=()
 
-for ((gpu=0; gpu<NUM_GPUS; gpu++)); do
+# Convert GPU_LIST to array
+IFS=',' read -ra GPU_ARRAY <<< "$GPU_LIST"
+
+for i in "${!GPU_ARRAY[@]}"; do
+    gpu=${GPU_ARRAY[$i]}
     run_gpu_benchmark $gpu &
-    pids[$gpu]=$!
-    start_times[$gpu]=$(date +%s.%N)
+    pids[$i]=$!
+    start_times[$i]=$(date +%s.%N)
 done
 
 echo ""
@@ -118,8 +125,8 @@ while true; do
     running=0
     completed=0
     
-    for ((gpu=0; gpu<NUM_GPUS; gpu++)); do
-        if kill -0 "${pids[$gpu]}" 2>/dev/null; then
+    for i in "${!GPU_ARRAY[@]}"; do
+        if kill -0 "${pids[$i]}" 2>/dev/null; then
             running=$((running + 1))
         else
             completed=$((completed + 1))
@@ -177,13 +184,14 @@ total_time=0
 successful_runs=0
 failed_runs=0
 
-for ((gpu=0; gpu<NUM_GPUS; gpu++)); do
+for i in "${!GPU_ARRAY[@]}"; do
+    gpu=${GPU_ARRAY[$i]}
     gpu_dir="$BENCHMARK_DIR/gpu${gpu}"
     time_file="$gpu_dir/timing.txt"
     log_file="$BENCHMARK_DIR/gpu${gpu}_benchmark.log"
     
     # Wait for process and get exit code
-    wait "${pids[$gpu]}"
+    wait "${pids[$i]}"
     exit_code=$?
     
     if [ $exit_code -eq 0 ] && [ -f "$time_file" ]; then
