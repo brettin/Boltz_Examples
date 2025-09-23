@@ -132,9 +132,21 @@ while true; do
     
     # Show current GPU memory usage
     echo "💾 Current GPU Memory:"
-    nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits | \
+    if nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null | \
         head -n $NUM_GPUS | \
-        awk -F, '{printf "  GPU %s: %sMB/%sMB (%.1f%%) - Util: %s%%\n", $1, $3, $4, ($3/$4)*100, $5}'
+        awk -F, '{
+            if (NF >= 4 && $4 > 0) {
+                printf "  GPU %s: %sMB/%sMB (%.1f%%) - Util: %s%%\n", $1, $3, $4, ($3/$4)*100, $5
+            } else if (NF >= 3) {
+                printf "  GPU %s: %sMB/N/A (N/A%%) - Util: %s%%\n", $1, $3, ($5 ? $5 : "N/A")
+            } else {
+                printf "  GPU %s: Error reading memory data\n", ($1 ? $1 : "?")
+            }
+        }'; then
+        :  # Success, do nothing
+    else
+        echo "  ⚠️  Unable to query GPU memory status"
+    fi
     echo ""
     
     sleep 60  # Check every minute
