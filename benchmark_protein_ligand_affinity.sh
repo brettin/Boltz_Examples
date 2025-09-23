@@ -143,9 +143,9 @@ while true; do
     echo "Current GPU Profile:"
     if nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null > /tmp/gpu_status_all.csv; then
         # Only show stats for the GPUs in our user-specified list
-        for gpu in "${GPU_ARRAY[@]}"; do
+        for monitor_gpu in "${GPU_ARRAY[@]}"; do
             # Find the line for this specific GPU
-            if gpu_line=$(grep "^${gpu}," /tmp/gpu_status_all.csv); then
+            if gpu_line=$(grep "^${monitor_gpu}," /tmp/gpu_status_all.csv); then
                 # Parse the line for this GPU
                 IFS=',' read -r gpu_index mem_used mem_total util_gpu <<< "$gpu_line"
                 # Remove any whitespace
@@ -157,7 +157,7 @@ while true; do
                 
                 echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - GPU Util: ${util_gpu}% - Memory Util: ${perc_mem}%"
             else
-                echo "  GPU $gpu: Unable to read status"
+                echo "  GPU $monitor_gpu: Unable to read status"
             fi
         done
         # rm -f /tmp/gpu_status_all.csv
