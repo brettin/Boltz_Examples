@@ -139,8 +139,8 @@ while true; do
     
     echo "$(date '+%H:%M:%S'): 🔄 Running: $running, ✅ Completed: $completed"
     
-    # Show current GPU memory usage (only for user-specified GPUs)
-    echo "Current GPU Memory:"
+    # Show current GPU profile (only for user-specified GPUs)
+    echo "Current GPU Profile:"
     if nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null > /tmp/gpu_status_all.csv; then
         # Only show stats for the GPUs in our user-specified list
         for gpu in "${GPU_ARRAY[@]}"; do
