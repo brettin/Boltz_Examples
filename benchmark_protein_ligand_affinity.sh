@@ -195,7 +195,7 @@ failed_runs=0
 for i in "${!GPU_ARRAY[@]}"; do
     gpu=${GPU_ARRAY[$i]}
     gpu_dir="$BENCHMARK_DIR/gpu${gpu}"
-    time_file="$gpu_dir/timing.txt"
+    time_file="$BENCHMARK_DIR/gpu${gpu}_timing.txt"
     log_file="$BENCHMARK_DIR/gpu${gpu}_benchmark.log"
     
     # Wait for process and get exit code
