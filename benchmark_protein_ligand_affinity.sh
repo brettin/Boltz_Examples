@@ -216,10 +216,10 @@ for i in "${!GPU_ARRAY[@]}"; do
             affinity_score=$(grep -i "affinity\|binding" "$log_file" | head -1 | cut -c1-15 || echo "N/A")
         fi
         
-        printf "%-6s %-10s %-15.2f %-15s %-20s\n" "$gpu" "SUCCESS" "$duration" "$structure_count" "$affinity_score"
+        printf "%-6s %-10s %-15.2f %-15s %-20s\n" "$gpu" "$exit_code" "$duration" "$structure_count" "$affinity_score"
         successful_runs=$((successful_runs + 1))
     else
-        printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "FAILED" "N/A" "0" "N/A"
+        printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "N/A" "0" "N/A"
         failed_runs=$((failed_runs + 1))
     fi
 done
