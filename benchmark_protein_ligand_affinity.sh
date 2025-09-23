@@ -139,20 +139,27 @@ while true; do
     
     echo "$(date '+%H:%M:%S'): 🔄 Running: $running, ✅ Completed: $completed"
     
-    # Show current GPU memory usage
+    # Show current GPU memory usage (only for user-specified GPUs)
     echo "Current GPU Memory:"
-    if nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -n $NUM_GPUS > /tmp/gpu_status.csv; then
-        while IFS=',' read -r gpu_index mem_used mem_total util_gpu; do
-            # Remove any whitespace
-            gpu_index=$(echo "$gpu_index" | tr -d ' ')
-            mem_used=$(echo "$mem_used" | tr -d ' ')
-            mem_total=$(echo "$mem_total" | tr -d ' ')
-            util_gpu=$(echo "$util_gpu" | tr -d ' ')
-            
-            # Simple display without percentage calculation
-            echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - Util: ${util_gpu}%"
-        done < /tmp/gpu_status.csv
-        rm -f /tmp/gpu_status.csv
+    if nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null > /tmp/gpu_status_all.csv; then
+        # Only show stats for the GPUs in our user-specified list
+        for gpu in "${GPU_ARRAY[@]}"; do
+            # Find the line for this specific GPU
+            if gpu_line=$(grep "^${gpu}," /tmp/gpu_status_all.csv); then
+                # Parse the line for this GPU
+                IFS=',' read -r gpu_index mem_used mem_total util_gpu <<< "$gpu_line"
+                # Remove any whitespace
+                gpu_index=$(echo "$gpu_index" | tr -d ' ')
+                mem_used=$(echo "$mem_used" | tr -d ' ')
+                mem_total=$(echo "$mem_total" | tr -d ' ')
+                util_gpu=$(echo "$util_gpu" | tr -d ' ')
+                
+                echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - Util: ${util_gpu}%"
+            else
+                echo "  GPU $gpu: Unable to read status"
+            fi
+        done
+        rm -f /tmp/gpu_status_all.csv
     else
         echo "  Unable to query GPU memory status"
     fi
