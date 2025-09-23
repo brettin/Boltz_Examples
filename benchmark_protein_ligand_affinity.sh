@@ -137,7 +137,7 @@ while true; do
         break
     fi
     
-    echo "$(date '+%H:%M:%S'): 🔄 Running: $running, ✅ Completed: $completed"
+    echo "$(date '+%H:%M:%S'): Running: $running, Completed: $completed"
     
     # Show current GPU profile (only for user-specified GPUs)
     echo "Current GPU Profile:"
@@ -194,6 +194,8 @@ failed_runs=0
 
 for i in "${!GPU_ARRAY[@]}"; do
     gpu=${GPU_ARRAY[$i]}
+    # Clean the gpu variable to ensure no contamination
+    gpu=$(echo "$gpu" | tr -d ' \t\n\r')
     gpu_dir="$BENCHMARK_DIR/gpu${gpu}"
     time_file="$BENCHMARK_DIR/gpu${gpu}_timing.txt"
     log_file="$BENCHMARK_DIR/gpu${gpu}_benchmark.log"
@@ -216,10 +218,14 @@ for i in "${!GPU_ARRAY[@]}"; do
             affinity_score=$(grep -i "affinity\|binding" "$log_file" | head -1 | cut -c1-15 || echo "N/A")
         fi
         
-        printf "%-6s %-10s %-15.2f %-15s %-20s\n" "$gpu" "$exit_code" "$duration" "$structure_count" "$affinity_score"
+        # Debug: show what's actually in the gpu variable
+        echo "DEBUG: gpu='$gpu', exit_code='$exit_code'" >&2
+        printf "%-6s %-10s %-15.2f %-15s %-20s\n" "$gpu" "SUCCESS" "$duration" "$structure_count" "$affinity_score"
         successful_runs=$((successful_runs + 1))
     else
-        printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "N/A" "0" "N/A"
+        # Debug: show what's actually in the gpu variable
+        echo "DEBUG: gpu='$gpu', exit_code='$exit_code' (FAILED)" >&2
+        printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "FAILED" "N/A" "0" "N/A"
         failed_runs=$((failed_runs + 1))
     fi
 done
