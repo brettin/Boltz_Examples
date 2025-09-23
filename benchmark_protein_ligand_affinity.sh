@@ -153,14 +153,14 @@ while true; do
                 mem_used=$(echo "$mem_used" | tr -d ' ')
                 mem_total=$(echo "$mem_total" | tr -d ' ')
                 util_gpu=$(echo "$util_gpu" | tr -d ' ')
-                perc_mem=$(echo "scale=1; ($mem_used / $mem_total) * 100" | bc -l)
+                perc_mem=$(echo "scale=4; ($mem_used / $mem_total) * 100" | bc -l)
                 
                 echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - Util: ${util_gpu}% - ${perc_mem}%"
             else
                 echo "  GPU $gpu: Unable to read status"
             fi
         done
-        rm -f /tmp/gpu_status_all.csv
+        # rm -f /tmp/gpu_status_all.csv
     else
         echo "  Unable to query GPU memory status"
     fi
