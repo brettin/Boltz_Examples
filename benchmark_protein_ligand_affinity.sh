@@ -155,7 +155,7 @@ while true; do
                 util_gpu=$(echo "$util_gpu" | tr -d ' ')
                 perc_mem=$(echo "scale=4; ($mem_used / $mem_total) * 100" | bc -l)
                 
-                echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - Util: ${util_gpu}% - ${perc_mem}%"
+                echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - GPU Util: ${util_gpu}% - Memory Util: ${perc_mem}%"
             else
                 echo "  GPU $gpu: Unable to read status"
             fi
