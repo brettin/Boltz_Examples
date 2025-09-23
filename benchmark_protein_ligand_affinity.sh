@@ -230,7 +230,7 @@ echo "Total successful runs: $successful_runs/$NUM_GPUS"
 echo "Failed runs: $failed_runs"
 
 if [ $successful_runs -gt 0 ]; then
-    avg_time=$(echo "scale=2; $total_time / $successful_runs" | bc -l)
+    avg_time=$(echo "scale=4; $total_time / $successful_runs" | bc -l)
     echo "Average execution time: ${avg_time}s"
     echo "Total execution time: ${total_time}s"
     echo "Parallel efficiency: $(echo "scale=2; $avg_time * $NUM_GPUS / $total_time * 100" | bc -l)%"
