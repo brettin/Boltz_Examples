@@ -18,7 +18,9 @@
 set -e
 
 # Configuration
-NUM_GPUS=${1:-8}  # Default to 8 GPUs, can be overridden
+# Default to GPUs 0-7 if not specified
+GPU_LIST=${1:-"0,1,2,3,4,5,6,7"}
+NUM_GPUS=$(echo "$GPU_LIST" | tr ',' '\n' | wc -l)  # Count number of GPUs specified
 INPUT_CONFIG="protein_ligand_affinity.yaml"
 BENCHMARK_NAME="protein_ligand_affinity"
 
@@ -27,28 +29,28 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BENCHMARK_DIR="./benchmark_results_${BENCHMARK_NAME}_${TIMESTAMP}"
 mkdir -p "$BENCHMARK_DIR"
 
-echo "🧬 === Boltz-2 Protein-Ligand Affinity Benchmark ==="
-echo "📅 Timestamp: $TIMESTAMP"
-echo "🎯 Target: $INPUT_CONFIG"
-echo "🖥️  GPUs to test: $NUM_GPUS"
-echo "📁 Results directory: $BENCHMARK_DIR"
+echo "=== Boltz-2 Protein-Ligand Affinity Benchmark ==="
+echo "Timestamp: $TIMESTAMP"
+echo "Target: $INPUT_CONFIG"
+echo "  GPUs to test: $NUM_GPUS"
+echo "Results directory: $BENCHMARK_DIR"
 echo ""
 
 # Check GPU availability
 AVAILABLE_GPUS=$(nvidia-smi -L | wc -l)
 if [ "$AVAILABLE_GPUS" -lt "$NUM_GPUS" ]; then
-    echo "⚠️  Warning: Only $AVAILABLE_GPUS GPUs available, but $NUM_GPUS requested"
-    echo "🔄 Adjusting to use $AVAILABLE_GPUS GPUs"
+    echo "️Warning: Only $AVAILABLE_GPUS GPUs available, but $NUM_GPUS requested"
+    echo "Adjusting to use $AVAILABLE_GPUS GPUs"
     NUM_GPUS=$AVAILABLE_GPUS
 fi
 
 # Verify input file exists
 if [ ! -f "$INPUT_CONFIG" ]; then
-    echo "❌ Error: Input file '$INPUT_CONFIG' not found"
+    echo "Error: Input file '$INPUT_CONFIG' not found"
     exit 1
 fi
 
-echo "✅ Setup complete. Starting benchmark..."
+echo "Setup complete. Starting benchmark..."
 echo ""
 
 # Function to run benchmark on specific GPU
@@ -60,7 +62,7 @@ run_gpu_benchmark() {
     
     mkdir -p "$output_dir"
     
-    echo "🚀 GPU $gpu_id: Starting benchmark..."
+    echo "GPU $gpu_id: Starting benchmark..."
     
     # Record start time
     local start_time=$(date +%s.%N)
@@ -83,21 +85,21 @@ run_gpu_benchmark() {
     echo "Duration (seconds): $duration" >> "$time_file"
     
     if [ $exit_code -eq 0 ]; then
-        echo "✅ GPU $gpu_id: Completed successfully (${duration}s)"
+        echo "GPU $gpu_id: Completed successfully (${duration}s)"
     else
-        echo "❌ GPU $gpu_id: Failed with exit code $exit_code"
+        echo "GPU $gpu_id: Failed with exit code $exit_code"
     fi
     
     return $exit_code
 }
 
 # Start GPU memory monitoring in background
-echo "📊 Starting GPU memory monitoring..."
+echo "Starting GPU memory monitoring..."
 nvidia-smi dmon -s m -f "$BENCHMARK_DIR/gpu_memory_monitor.csv" &
 MONITOR_PID=$!
 
 # Start all GPU benchmarks in parallel
-echo "🔄 Starting parallel benchmarks on $NUM_GPUS GPUs..."
+echo "Starting parallel benchmarks on $NUM_GPUS GPUs..."
 pids=()
 start_times=()
 
@@ -108,7 +110,7 @@ for ((gpu=0; gpu<NUM_GPUS; gpu++)); do
 done
 
 echo ""
-echo "⏳ All benchmarks started. Monitoring progress..."
+echo "All benchmarks started. Monitoring progress..."
 echo ""
 
 # Monitor progress
@@ -131,21 +133,21 @@ while true; do
     echo "$(date '+%H:%M:%S'): 🔄 Running: $running, ✅ Completed: $completed"
     
     # Show current GPU memory usage
-    echo "💾 Current GPU Memory:"
-    if nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null | \
-        head -n $NUM_GPUS | \
-        awk -F, '{
-            if (NF >= 4 && $4 > 0) {
-                printf "  GPU %s: %sMB/%sMB (%.1f%%) - Util: %s%%\n", $1, $3, $4, ($3/$4)*100, $5
-            } else if (NF >= 3) {
-                printf "  GPU %s: %sMB/N/A (N/A%%) - Util: %s%%\n", $1, $3, ($5 ? $5 : "N/A")
-            } else {
-                printf "  GPU %s: Error reading memory data\n", ($1 ? $1 : "?")
-            }
-        }'; then
-        :  # Success, do nothing
+    echo "Current GPU Memory:"
+    if nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -n $NUM_GPUS > /tmp/gpu_status.csv; then
+        while IFS=',' read -r gpu_index mem_used mem_total util_gpu; do
+            # Remove any whitespace
+            gpu_index=$(echo "$gpu_index" | tr -d ' ')
+            mem_used=$(echo "$mem_used" | tr -d ' ')
+            mem_total=$(echo "$mem_total" | tr -d ' ')
+            util_gpu=$(echo "$util_gpu" | tr -d ' ')
+            
+            # Simple display without percentage calculation
+            echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - Util: ${util_gpu}%"
+        done < /tmp/gpu_status.csv
+        rm -f /tmp/gpu_status.csv
     else
-        echo "  ⚠️  Unable to query GPU memory status"
+        echo "  Unable to query GPU memory status"
     fi
     echo ""
     
