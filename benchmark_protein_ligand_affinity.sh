@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Disable output buffering for real-time display
+exec 1> >(stdbuf -oL cat)
+exec 2> >(stdbuf -eL cat >&2)
+
 # Protein-Ligand Affinity Benchmark Script
 # ========================================
 # This script benchmarks Boltz-2 protein-ligand affinity predictions across multiple GPUs
@@ -33,7 +37,6 @@ BENCHMARK_DIR="./benchmark_results_${BENCHMARK_NAME}_${TIMESTAMP}"
 mkdir -p "$BENCHMARK_DIR"
 
 echo "=== Boltz-2 Protein-Ligand Affinity Benchmark ==="
-echo "Timestamp: $TIMESTAMP"
 echo "Target: $INPUT_CONFIG"
 echo "GPUs to test: $GPU_LIST ($NUM_GPUS total)"
 echo "Results directory: $BENCHMARK_DIR"
@@ -52,9 +55,6 @@ if [ ! -f "$INPUT_CONFIG" ]; then
     echo "Error: Input file '$INPUT_CONFIG' not found"
     exit 1
 fi
-
-echo "Setup complete. Starting benchmark..."
-echo ""
 
 # Function to run benchmark on specific GPU
 run_gpu_benchmark() {
@@ -112,10 +112,6 @@ for i in "${!GPU_ARRAY[@]}"; do
     start_times[$i]=$(date +%s.%N)
 done
 
-echo ""
-echo "All benchmarks started. Monitoring progress..."
-echo ""
-
 # Monitor progress
 while true; do
     running=0
@@ -137,7 +133,7 @@ while true; do
     
     # Show current GPU profile (only for user-specified GPUs)
     echo "Current GPU Profile:"
-    nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null > /tmp/gpu_status_all.csv; then
+    nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null > /tmp/gpu_status_all.csv
 
     # Only show stats for the GPUs in our user-specified list
     for monitor_gpu in "${GPU_ARRAY[@]}"; do
@@ -209,8 +205,10 @@ for i in "${!GPU_ARRAY[@]}"; do
             affinity_score=$(grep -i "affinity\|binding" "$log_file" | head -1 | cut -c1-15 || echo "N/A")
         fi
         
-        echo "gpu='$gpu', exit_code='$exit_code', duration='$duration', structure_count='$structure_count', affinity_score='$affinity_score'" >&2
-        echo ""
+         echo "gpu='$gpu', exit_code='$exit_code', duration='$duration', structure_count='$structure_count', affinity_score='$affinity_score'"
+         echo ""
+         # Flush output
+         exec 1>&1 2>&2
         successful_runs=$((successful_runs + 1))
     else
         printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "N/A" "0" "N/A"
