@@ -178,10 +178,6 @@ echo "Timestamp: $TIMESTAMP"
 echo "GPUs tested: $NUM_GPUS"
 echo ""
 
-# Results table header
-printf "%-6s %-10s %-15s %-15s %-20s\n" "GPU" "Status" "Time (s)" "Structures" "Affinity Score"
-printf "%-6s %-10s %-15s %-15s %-20s\n" "---" "------" "--------" "----------" "-------------"
-
 total_time=0
 successful_runs=0
 failed_runs=0
@@ -213,9 +209,8 @@ for i in "${!GPU_ARRAY[@]}"; do
             affinity_score=$(grep -i "affinity\|binding" "$log_file" | head -1 | cut -c1-15 || echo "N/A")
         fi
         
-        echo "DEBUG: gpu='$gpu', exit_code='$exit_code'" >&2
-        # Ensure clean output by explicitly formatting the GPU field
-        #printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "$duration" "$structure_count" "$affinity_score"
+        echo "gpu='$gpu', exit_code='$exit_code', duration='$duration', structure_count='$structure_count', affinity_score='$affinity_score'" >&2
+        echo ""
         successful_runs=$((successful_runs + 1))
     else
         printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "N/A" "0" "N/A"
