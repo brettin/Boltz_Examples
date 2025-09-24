@@ -215,13 +215,14 @@ for i in "${!GPU_ARRAY[@]}"; do
         # Extract affinity score if available
         affinity_score="N/A"
         if [ -f "$log_file" ]; then
+            echo "DEBUG: found log_file='$log_file'" >&2
             affinity_score=$(grep -i "affinity\|binding" "$log_file" | head -1 | cut -c1-15 || echo "N/A")
         fi
         
         # Debug: show what's actually in the gpu variable
         echo "DEBUG: gpu='$gpu', exit_code='$exit_code'" >&2
         # Ensure clean output by explicitly formatting the GPU field
-        printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "$duration" "$structure_count" "$affinity_score"
+        #printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "$duration" "$structure_count" "$affinity_score"
         successful_runs=$((successful_runs + 1))
     else
         printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "N/A" "0" "N/A"
