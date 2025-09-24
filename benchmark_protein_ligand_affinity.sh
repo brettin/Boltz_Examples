@@ -43,8 +43,8 @@ echo ""
 AVAILABLE_GPUS=$(nvidia-smi -L | wc -l)
 if [ "$AVAILABLE_GPUS" -lt "$NUM_GPUS" ]; then
     echo "️Warning: Only $AVAILABLE_GPUS GPUs available, but $NUM_GPUS requested"
-    echo "Adjusting to use $AVAILABLE_GPUS GPUs"
-    NUM_GPUS=$AVAILABLE_GPUS
+    echo "Please adjust the GPU list to use $AVAILABLE_GPUS GPUs"
+    exit 1
 fi
 
 # Verify input file exists
@@ -97,16 +97,12 @@ run_gpu_benchmark() {
 }
 
 # Start GPU memory monitoring in background
-echo "Starting GPU memory monitoring..."
 nvidia-smi dmon -s m -f "$BENCHMARK_DIR/gpu_memory_monitor.csv" &
 MONITOR_PID=$!
 
 # Start all GPU benchmarks in parallel
-echo "Starting parallel benchmarks on $NUM_GPUS GPUs..."
 pids=()
 start_times=()
-
-# Convert GPU_LIST to array
 IFS=',' read -ra GPU_ARRAY <<< "$GPU_LIST"
 
 for i in "${!GPU_ARRAY[@]}"; do
@@ -141,32 +137,30 @@ while true; do
     
     # Show current GPU profile (only for user-specified GPUs)
     echo "Current GPU Profile:"
-    if nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null > /tmp/gpu_status_all.csv; then
-        # Only show stats for the GPUs in our user-specified list
-        for monitor_gpu in "${GPU_ARRAY[@]}"; do
-            # Find the line for this specific GPU
-            if gpu_line=$(grep "^${monitor_gpu}," /tmp/gpu_status_all.csv); then
-                # Parse the line for this GPU
-                IFS=',' read -r gpu_index mem_used mem_total util_gpu <<< "$gpu_line"
-                # Remove any whitespace
-                gpu_index=$(echo "$gpu_index" | tr -d ' ')
-                mem_used=$(echo "$mem_used" | tr -d ' ')
-                mem_total=$(echo "$mem_total" | tr -d ' ')
-                util_gpu=$(echo "$util_gpu" | tr -d ' ')
-                perc_mem=$(echo "scale=4; ($mem_used / $mem_total) * 100" | bc -l)
+    nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits 2>/dev/null > /tmp/gpu_status_all.csv; then
+
+    # Only show stats for the GPUs in our user-specified list
+    for monitor_gpu in "${GPU_ARRAY[@]}"; do
+        # Find the line for this specific GPU
+        if gpu_line=$(grep "^${monitor_gpu}," /tmp/gpu_status_all.csv); then
+            # Parse the line for this GPU
+            IFS=',' read -r gpu_index mem_used mem_total util_gpu <<< "$gpu_line"
+            # Remove any whitespace
+            gpu_index=$(echo "$gpu_index" | tr -d ' ')
+            mem_used=$(echo "$mem_used" | tr -d ' ')
+            mem_total=$(echo "$mem_total" | tr -d ' ')
+            util_gpu=$(echo "$util_gpu" | tr -d ' ')
+            perc_mem=$(echo "scale=4; ($mem_used / $mem_total) * 100" | bc -l)
                 
-                echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - GPU Util: ${util_gpu}% - Memory Util: ${perc_mem}%"
-            else
-                echo "  GPU $monitor_gpu: Unable to read status"
-            fi
-        done
-        # rm -f /tmp/gpu_status_all.csv
-    else
-        echo "  Unable to query GPU memory status"
-    fi
+            echo "  GPU $gpu_index: ${mem_used}MB/${mem_total}MB - GPU Util: ${util_gpu}% - Memory Util: ${perc_mem}%"
+        else
+            echo "  GPU $monitor_gpu: Unable to read status"
+        fi
+    done
+    # rm -f /tmp/gpu_status_all.csv
     echo ""
     
-    sleep 60  # Check every minute
+    sleep 30  # Check every minute
 done
 
 # Stop memory monitoring
@@ -219,7 +213,6 @@ for i in "${!GPU_ARRAY[@]}"; do
             affinity_score=$(grep -i "affinity\|binding" "$log_file" | head -1 | cut -c1-15 || echo "N/A")
         fi
         
-        # Debug: show what's actually in the gpu variable
         echo "DEBUG: gpu='$gpu', exit_code='$exit_code'" >&2
         # Ensure clean output by explicitly formatting the GPU field
         #printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "$duration" "$structure_count" "$affinity_score"
