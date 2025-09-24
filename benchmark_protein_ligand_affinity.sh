@@ -221,20 +221,16 @@ for i in "${!GPU_ARRAY[@]}"; do
         # Debug: show what's actually in the gpu variable
         echo "DEBUG: gpu='$gpu', exit_code='$exit_code'" >&2
         # Ensure clean output by explicitly formatting the GPU field
-        printf "%-6d %-10s %-15.2f %-15s %-20s\n" "$gpu" "SUCCESS" "$duration" "$structure_count" "$affinity_score"
+        printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "$duration" "$structure_count" "$affinity_score"
         successful_runs=$((successful_runs + 1))
     else
-        # Debug: show what's actually in the gpu variable
-        echo "DEBUG: gpu='$gpu', exit_code='$exit_code' (FAILED)" >&2
-        printf "%-6d %-10s %-15s %-15s %-20s\n" "$gpu" "FAILED" "N/A" "0" "N/A"
+        printf "%-6s %-10s %-15s %-15s %-20s\n" "$gpu" "$exit_code" "N/A" "0" "N/A"
         failed_runs=$((failed_runs + 1))
     fi
 done
 
-# Ensure all output is flushed before showing results
-exec 1>&1  # Flush stdout
 echo ""
-echo "=== PERFORMANCE STATISTICS ==="
+echo "📈 === PERFORMANCE STATISTICS ==="
 echo "Total successful runs: $successful_runs/$NUM_GPUS"
 echo "Failed runs: $failed_runs"
 
